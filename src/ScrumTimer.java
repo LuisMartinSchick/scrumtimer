@@ -1,6 +1,4 @@
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +18,9 @@ public class ScrumTimer {
     private int singleSecondCounter;
     private int currentSpeaker = 1;
     private int totalSecondCounter;
-    private enum PossibleTimerStatus {STARTED, PAUSED, STOPPED};
+
+    private enum PossibleTimerStatus {STARTED, PAUSED, STOPPED}
+
     PossibleTimerStatus timerStatus;
     ScheduledExecutorService executor;
 
@@ -32,7 +32,7 @@ public class ScrumTimer {
                  InstantiationException e) {
             throw new RuntimeException(e);
         }
-        frame.setDefaultLookAndFeelDecorated(true);
+        JFrame.setDefaultLookAndFeelDecorated(true);
         frame.setContentPane(new ScrumTimer().rootPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setAlwaysOnTop(true);
@@ -42,46 +42,38 @@ public class ScrumTimer {
 
     public ScrumTimer() {
         timerStatus = PossibleTimerStatus.STOPPED;
-        barSingle.setString(secondsToMinutes(SECONDS_PER_SPEAKER));
-        barSingle.setMaximum(SECONDS_PER_SPEAKER);
         barSingle.setValue(0);
+        barSingle.setMaximum(SECONDS_PER_SPEAKER);
+        barSingle.setString(secondsToMinutes(SECONDS_PER_SPEAKER));
         barTotal.setValue(0);
         barTotal.setMaximum(SECONDS_PER_SPEAKER);
         barTotal.setString(secondsToMinutes(((int) comboSpeakers.getValue()) * SECONDS_PER_SPEAKER));
         comboSpeakers.setValue(1);
-        btnStart.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                btnStop.setEnabled(true);
-                btnStart.setEnabled(false);
-                barTotal.setString(secondsToMinutes(((int) comboSpeakers.getValue()) * SECONDS_PER_SPEAKER));
-                barTotal.setMaximum(SECONDS_PER_SPEAKER * (int) comboSpeakers.getValue());
-                timerStatus = PossibleTimerStatus.STARTED;
 
-                executor = Executors.newScheduledThreadPool(1);
-                executor.scheduleAtFixedRate(updateSingleBar, 0, 1, TimeUnit.SECONDS);
+        // Click Listeners for Buttons
+        btnStart.addActionListener(e -> {
+            btnStop.setEnabled(true);
+            btnStart.setEnabled(false);
+            barTotal.setString(secondsToMinutes(((int) comboSpeakers.getValue()) * SECONDS_PER_SPEAKER));
+            barTotal.setMaximum(SECONDS_PER_SPEAKER * (int) comboSpeakers.getValue());
+            timerStatus = PossibleTimerStatus.STARTED;
 
-            }
+            executor = Executors.newScheduledThreadPool(1);
+            executor.scheduleAtFixedRate(updateBars, 0, 1, TimeUnit.SECONDS);
+
         });
-        btnStop.addActionListener(new ActionListener() {
-            /**
-             * Invoked when button is clicked.
-             *
-             * @param e the event to be processed
-             */
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                executor.shutdown();
-                singleSecondCounter=0;
-                totalSecondCounter=0;
-                btnStop.setEnabled(false);
-                btnStart.setEnabled(true);
-                resetProgress();
-                timerStatus = PossibleTimerStatus.STOPPED;
-            }
+        btnStop.addActionListener(e -> {
+            executor.shutdown();
+            singleSecondCounter = 0;
+            totalSecondCounter = 0;
+            btnStop.setEnabled(false);
+            btnStart.setEnabled(true);
+            resetProgress();
+            timerStatus = PossibleTimerStatus.STOPPED;
         });
     }
-    Runnable updateSingleBar = new Runnable() {
+
+    Runnable updateBars = new Runnable() {
         public void run() {
             singleSecondCounter++;
             totalSecondCounter++;
@@ -89,13 +81,18 @@ public class ScrumTimer {
                 singleSecondCounter = 0;
                 currentSpeaker++;
             }
-            barSingle.setString(secondsToMinutes(SECONDS_PER_SPEAKER - singleSecondCounter ) + " | " + currentSpeaker + "/" + comboSpeakers.getValue());
+
+            barSingle.setString(
+                    secondsToMinutes(SECONDS_PER_SPEAKER - singleSecondCounter)
+                            + " | " + currentSpeaker + "/" + comboSpeakers.getValue());
             barSingle.setValue(singleSecondCounter);
 
-            barTotal.setString(secondsToMinutes((((int) comboSpeakers.getValue()) * SECONDS_PER_SPEAKER) - totalSecondCounter));
+            barTotal.setString(
+                    secondsToMinutes((((int) comboSpeakers.getValue()) * SECONDS_PER_SPEAKER) - totalSecondCounter));
             barTotal.setValue(totalSecondCounter);
         }
     };
+
     private void resetProgress() {
         barSingle.setValue(0);
         barSingle.setString(secondsToMinutes(SECONDS_PER_SPEAKER));
